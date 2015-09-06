@@ -66,26 +66,16 @@ namespace FileS
             internalData = Data;
         }
 
-        public byte[] Data
-        {
-            get
-            {
-                if (!_loaded)
-                {
-                    internalData = new byte[Length ?? 0];
-                    Array.ConstrainedCopy(Parent.LoadedData, ParentOffset ?? 0, internalData, 0, Length ?? 0);
-                    _loaded = true;
-                }
-                return Encoding.Default.GetBytes(Signature)
-                    .Concat(new byte[] { (byte)Encoding.Default.GetByteCount(FullName) })
-                    .Concat(Encoding.Default.GetBytes(FullName))
-                    .Concat(BitConverter.GetBytes(internalData.Length))
-                    .Concat(internalData).ToArray();
-            }
-        }
+        public byte[] Data => Encoding.Default.GetBytes(Signature)
+            .Concat(new byte[] { (byte)Encoding.Default.GetByteCount(FullName) })
+            .Concat(Encoding.Default.GetBytes(FullName))
+            .Concat(BitConverter.GetBytes(Load().Length))
+            .Concat(Load()).ToArray();
 
         public string Extension { get; }
+
         public string FullName => Name + Extension;
+
         public bool IsLoaded => _loaded;
 
         public int? Length { get; }
@@ -105,9 +95,27 @@ namespace FileS
             Parent.Children.Remove(this);
         }
 
+        public void ExtractTo(DirectoryInfo Directory)
+        {
+            if (!Directory.Exists)
+                Directory.Create();
+            System.IO.File.WriteAllBytes(Directory.FullName + @"\" + FullName, Load());
+        }
+
         public void Rename(string NewName)
         {
             _name = NewName;
+        }
+
+        private byte[] Load()
+        {
+            if (!_loaded)
+            {
+                internalData = new byte[Length ?? 0];
+                Array.ConstrainedCopy(Parent.LoadedData, ParentOffset ?? 0, internalData, 0, Length ?? 0);
+                _loaded = true;
+            }
+            return internalData;
         }
     }
 }

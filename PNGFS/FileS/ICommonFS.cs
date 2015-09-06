@@ -9,6 +9,8 @@ namespace FileS
         AbstractParent Root { get; }
         string Signature { get; }
 
+        void ExtractTo(System.IO.DirectoryInfo Directory);
+
         void Rename(string NewName);
     }
 }

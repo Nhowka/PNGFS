@@ -51,6 +51,16 @@ namespace FileS
 
         public abstract string Signature { get; }
 
+        public void ExtractTo(DirectoryInfo Directory)
+        {
+            if (!Directory.Exists)
+                Directory.Create();
+            foreach (var file in Files)
+                file.ExtractTo(Directory);
+            foreach (var folder in Folders)
+                folder.ExtractTo(new DirectoryInfo(Directory.FullName + @"\" + folder.Name));
+        }
+
         public File NewFile(FileInfo File)
         {
             var newFile = new File(this, File);
