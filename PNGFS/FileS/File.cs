@@ -15,7 +15,7 @@ namespace FileS
 
         internal File(AbstractParent Parent, FileInfo File)
         {
-            this.Parent = Parent;
+            this.Parent = Parent; _loaded = true;
             var lastIndex = File.Name.LastIndexOf('.');
             if (lastIndex != -1)
                 _name = File.Name.Substring(0, lastIndex);
@@ -50,6 +50,7 @@ namespace FileS
 
         internal File(AbstractParent Parent, string Name, byte[] Data)
         {
+            _loaded = true;
             this.Parent = Parent;
             var lastIndex = Name.LastIndexOf('.');
             if (lastIndex != -1)

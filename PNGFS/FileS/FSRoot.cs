@@ -16,14 +16,13 @@ namespace FileS
         public FSRoot(byte[] Data)
         {
             var readingOffset = 0;
-            var signature = new string(Encoding.Default.GetChars(LoadedData, readingOffset, 4));
+            var signature = new string(Encoding.Default.GetChars(Data, readingOffset, 4));
             if (Signature != signature)
             {
                 throw new Exception("Invalid input");
             }
             readingOffset += 4;
-            var nameLength = BitConverter.ToInt32(Data, readingOffset);
-            readingOffset += 4;
+            var nameLength = (int)Data[readingOffset++];
             Rename(new string(Encoding.Default.GetChars(Data, readingOffset, nameLength)));
             readingOffset += nameLength;
             var Length = BitConverter.ToInt32(Data, readingOffset);
@@ -38,8 +37,7 @@ namespace FileS
             {
                 signature = new string(Encoding.Default.GetChars(LoadedData, readingOffset, 4));
                 readingOffset += 4;
-                nameLength = BitConverter.ToInt32(LoadedData, readingOffset);
-                readingOffset += 4;
+                nameLength = LoadedData[readingOffset++];
                 Name = new string(Encoding.Default.GetChars(LoadedData, readingOffset, nameLength));
                 readingOffset += nameLength;
                 Length = BitConverter.ToInt32(LoadedData, readingOffset);
@@ -48,10 +46,21 @@ namespace FileS
                 {
                     base.Children.Add(new Folder(this, Name, Length, readingOffset));
                 }
-                if (signature == "FILE")
+                else if (signature == "FILE")
                 {
                     base.Children.Add(new File(this, Name, Length, readingOffset));
                 }
+                readingOffset += Length;
+            }
+        }
+
+        public override List<IChild> Children
+        {
+            get
+            {
+                if (LoadedData != null && base.Children.Any() && base.Children.All(x => x.IsLoaded))
+                    LoadedData = null;
+                return base.Children;
             }
         }
 

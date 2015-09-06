@@ -19,7 +19,6 @@ namespace FileS
         internal Folder(AbstractParent Parent, string Name, int Length, int ParentOffset) : base(Name)
         {
             this.Parent = Parent;
-            Rename(Name);
             this.Length = Length;
             this.ParentOffset = ParentOffset;
             _loaded = false;
@@ -43,36 +42,41 @@ namespace FileS
         {
             get
             {
-                if (!_loaded)
+                if (LoadedData != null == _loaded)
                 {
-                    LoadedData = new byte[Length ?? 0];
-                    Array.ConstrainedCopy(Parent.LoadedData, ParentOffset ?? 0, LoadedData, 0, Length ?? 0);
-                    var readingOffset = 0;
-                    int childrenCount = BitConverter.ToInt32(LoadedData, readingOffset);
-                    readingOffset += 4;
-                    int nameLength;
-                    int childLength;
-                    string Name;
-                    for (int i = 0; i < childrenCount; ++i)
+                    if (!_loaded)
                     {
-                        var signature = new string(Encoding.Default.GetChars(LoadedData, readingOffset, 4));
+                        LoadedData = new byte[Length ?? 0];
+                        Array.ConstrainedCopy(Parent.LoadedData, ParentOffset ?? 0, LoadedData, 0, Length ?? 0);
+                        var readingOffset = 0;
+                        int childrenCount = BitConverter.ToInt32(LoadedData, readingOffset);
                         readingOffset += 4;
-                        nameLength = BitConverter.ToInt32(LoadedData, readingOffset);
-                        readingOffset += 4;
-                        Name = new string(Encoding.Default.GetChars(LoadedData, readingOffset, nameLength));
-                        readingOffset += nameLength;
-                        childLength = BitConverter.ToInt32(LoadedData, readingOffset);
-                        readingOffset += 4;
-                        if (signature == "FLDR")
+                        int nameLength;
+                        int childLength;
+                        string Name;
+                        for (int i = 0; i < childrenCount; ++i)
                         {
-                            base.Children.Add(new Folder(this, Name, childLength, readingOffset));
+                            var signature = new string(Encoding.Default.GetChars(LoadedData, readingOffset, 4));
+                            readingOffset += 4;
+                            nameLength = LoadedData[readingOffset++];
+                            Name = new string(Encoding.Default.GetChars(LoadedData, readingOffset, nameLength));
+                            readingOffset += nameLength;
+                            childLength = BitConverter.ToInt32(LoadedData, readingOffset);
+                            readingOffset += 4;
+                            if (signature == "FLDR")
+                            {
+                                base.Children.Add(new Folder(this, Name, childLength, readingOffset));
+                            }
+                            if (signature == "FILE")
+                            {
+                                base.Children.Add(new File(this, Name, childLength, readingOffset));
+                            }
+                            readingOffset += childLength;
                         }
-                        if (signature == "FILE")
-                        {
-                            base.Children.Add(new File(this, Name, childLength, readingOffset));
-                        }
+                        _loaded = true;
                     }
-                    _loaded = true;
+                    if (base.Children.Any() && base.Children.All(x => x.IsLoaded))
+                        LoadedData = null;
                 }
                 return base.Children;
             }
