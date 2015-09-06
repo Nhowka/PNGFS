@@ -45,6 +45,8 @@
     <Compile Include="Folder.cs" />
     <Compile Include="IChild.cs" />
     <Compile Include="ICommonFS.cs" />
+    <Compile Include="ILazyEnabler.cs" />
+    <Compile Include="ILazyLoad.cs" />
     <Compile Include="IParent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FSRoot.cs" />

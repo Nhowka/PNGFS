@@ -6,7 +6,7 @@ namespace FileS
     {
         byte[] Data { get; }
         string Name { get; }
-        IParent Root { get; }
+        AbstractParent Root { get; }
         string Signature { get; }
 
         void Rename(string NewName);

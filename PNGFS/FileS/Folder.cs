@@ -7,16 +7,28 @@ using System.Threading.Tasks;
 
 namespace FileS
 {
-    public class Folder : AbstractParent, IChild
+    public class Folder : AbstractParent, IChild, ILazyLoad
     {
-        internal Folder(IParent Parent, string Name)
+        private bool _loaded;
+
+        internal Folder(AbstractParent Parent, string Name) : base(Name)
         {
-            this.Parent = Parent; Rename(Name);
+            this.Parent = Parent; _loaded = true;
         }
 
-        internal Folder(IParent Parent, DirectoryInfo Directory)
+        internal Folder(AbstractParent Parent, string Name, int Length, int ParentOffset) : base(Name)
+        {
+            this.Parent = Parent;
+            Rename(Name);
+            this.Length = Length;
+            this.ParentOffset = ParentOffset;
+            _loaded = false;
+        }
+
+        internal Folder(AbstractParent Parent, DirectoryInfo Directory)
         {
             this.Parent = Parent; Rename(Directory.Name);
+            _loaded = true;
             foreach (var d in Directory.EnumerateDirectories())
             {
                 NewFolder(d);
@@ -27,8 +39,56 @@ namespace FileS
             }
         }
 
-        public IParent Parent { get; }
-        public override IParent Root => Parent.Root;
+        public override List<IChild> Children
+        {
+            get
+            {
+                if (!_loaded)
+                {
+                    LoadedData = new byte[Length ?? 0];
+                    Array.ConstrainedCopy(Parent.LoadedData, ParentOffset ?? 0, LoadedData, 0, Length ?? 0);
+                    var readingOffset = 0;
+                    int childrenCount = BitConverter.ToInt32(LoadedData, readingOffset);
+                    readingOffset += 4;
+                    int nameLength;
+                    int childLength;
+                    string Name;
+                    for (int i = 0; i < childrenCount; ++i)
+                    {
+                        var signature = new string(Encoding.Default.GetChars(LoadedData, readingOffset, 4));
+                        readingOffset += 4;
+                        nameLength = BitConverter.ToInt32(LoadedData, readingOffset);
+                        readingOffset += 4;
+                        Name = new string(Encoding.Default.GetChars(LoadedData, readingOffset, nameLength));
+                        readingOffset += nameLength;
+                        childLength = BitConverter.ToInt32(LoadedData, readingOffset);
+                        readingOffset += 4;
+                        if (signature == "FLDR")
+                        {
+                            base.Children.Add(new Folder(this, Name, childLength, readingOffset));
+                        }
+                        if (signature == "FILE")
+                        {
+                            base.Children.Add(new File(this, Name, childLength, readingOffset));
+                        }
+                    }
+                    _loaded = true;
+                }
+                return base.Children;
+            }
+        }
+
+        public bool IsLoaded => _loaded;
+        public int? Length { get; }
+
+        public AbstractParent Parent { get; }
+        public int? ParentOffset { get; }
+        public override AbstractParent Root => Parent.Root;
         public override string Signature => "FLDR";
+
+        public void Delete()
+        {
+            Parent.Children.Remove(this);
+        }
     }
 }

@@ -7,10 +7,20 @@ using System.Threading.Tasks;
 
 namespace FileS
 {
-    public abstract class AbstractParent : IParent
+    public abstract class AbstractParent : IParent, ILazyEnabler
     {
         private string _name;
-        public List<IChild> Children { get; } = new List<IChild>();
+
+        internal AbstractParent(string Name)
+        {
+            _name = Name;
+        }
+
+        internal AbstractParent()
+        {
+        }
+
+        public virtual List<IChild> Children { get; } = new List<IChild>();
 
         public byte[] Data
         {
@@ -28,9 +38,16 @@ namespace FileS
         public IEnumerable<File> Files => Children.OfType<File>();
 
         public IEnumerable<Folder> Folders => Children.OfType<Folder>();
+
+        public byte[] LoadedData
+        {
+            get;
+            protected set;
+        }
+
         public string Name => _name;
 
-        public abstract IParent Root { get; }
+        public abstract AbstractParent Root { get; }
 
         public abstract string Signature { get; }
 

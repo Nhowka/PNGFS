@@ -1,7 +1,9 @@
 ﻿namespace FileS
 {
-    public interface IChild : ICommonFS
+    public interface IChild : ICommonFS, ILazyLoad
     {
-        IParent Parent { get; }
+        AbstractParent Parent { get; }
+
+        void Delete();
     }
 }
